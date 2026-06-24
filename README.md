@@ -46,8 +46,6 @@ The preview is non-destructive: the editor window clones the source Canvas for e
 
 ## Installation
 
-### Via Unity Package Manager
-
 Add this line to your project's `Packages/manifest.json`:
 
 ```json
@@ -58,7 +56,7 @@ Add this line to your project's `Packages/manifest.json`:
 }
 ```
 
-If you want Unity's official device definitions as additional presets, also install `com.unity.device-simulator.devices`.
+You can also download the source code directly and import it into your Unity project.
 
 ---
 

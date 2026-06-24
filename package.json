@@ -10,7 +10,8 @@
         "url": "https://github.com/beddup/UnityCanvasDevicePreview.git"
     },
     "dependencies": {
-        "com.unity.textmeshpro": "3.0.9"
+        "com.unity.textmeshpro": "3.0.9",
+        "com.unity.device-simulator.devices": "1.0.1"
     },
     "keywords": [
         "canvas",
