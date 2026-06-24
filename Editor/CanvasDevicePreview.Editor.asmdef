@@ -1,0 +1,19 @@
+{
+    "name": "CanvasDevicePreview.Editor",
+    "rootNamespace": "CanvasDevicePreview.Editor",
+    "references": [
+        "Unity.TextMeshPro",
+        "CanvasDevicePreview"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

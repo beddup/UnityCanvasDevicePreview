@@ -1,0 +1,26 @@
+{
+    "name": "com.beddup.unitycanvasdevicepreview",
+    "displayName": "Canvas Device Preview",
+    "version": "0.1.0",
+    "unity": "2022.3",
+    "description": "Preview Unity UI canvases across multiple device resolutions with overlays, safe-area helpers, and quick UI adjustment tools.",
+    "author": {
+        "name": "beddup",
+        "email": "beddup@gmail.com",
+        "url": "https://github.com/beddup/UnityCanvasDevicePreview.git"
+    },
+    "dependencies": {
+        "com.unity.textmeshpro": "3.0.9"
+    },
+    "keywords": [
+        "canvas",
+        "ui",
+        "ugui",
+        "preview",
+        "resolution",
+        "device",
+        "safe-area",
+        "notch"
+    ],
+    "category": "Unity"
+}
