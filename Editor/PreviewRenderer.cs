@@ -69,7 +69,6 @@ namespace CanvasDevicePreview.Editor
                     var slot = BuildFullSlot(sourceCanvas, sourceCamera, key, res, deviceDb, customNotchHeights);
                     if (slot != null)
                     {
-                        slot.Camera.transform.position += sourceCamera.transform.position + (index + 1) * 15 * Vector3.right ;
                         _slots.Add(slot);
                         AddHighlights(sourceCanvas, slot, selectedRTs);
                         slot.Camera.Render();
@@ -79,6 +78,11 @@ namespace CanvasDevicePreview.Editor
                 {
                     Debug.LogError($"[PreviewRenderer] Failed for {key}: {e.Message}");
                 }
+            }
+            
+            for (int i = 0; i < _slots.Count; i ++)
+            {
+                _slots[i].Camera.transform.position = sourceCamera.transform.position + (i + 1) * 15 * Vector3.right;
             }
         }
 
@@ -136,7 +140,7 @@ namespace CanvasDevicePreview.Editor
 
                 var highlightGO = new GameObject("[CDP] Highlight")
                 {
-                    hideFlags = HideFlags.DontSave
+                    hideFlags = HideFlags.HideAndDontSave
                 };
                 highlightGO.transform.SetParent(cloneRt, false);
                 highlightGO.transform.SetAsLastSibling();
@@ -197,13 +201,13 @@ namespace CanvasDevicePreview.Editor
                 return null;
             }
 
-            var camGO = new GameObject($"[CDP] Cam {key}") { hideFlags = HideFlags.DontSave };
+            var camGO = new GameObject($"[CDP] Cam {key}") { hideFlags = HideFlags.HideAndDontSave };
             var cam = camGO.AddComponent<Camera>();
             ConfigurePreviewCamera(cam, sourceCamera, res);
 
             var rt = new RenderTexture(res.x, res.y, 24, RenderTextureFormat.ARGB32)
             {
-                hideFlags = HideFlags.DontSave,
+                hideFlags = HideFlags.HideAndDontSave,
                 name = $"[CDP] RT {key}"
             };
             rt.Create();
@@ -296,7 +300,7 @@ namespace CanvasDevicePreview.Editor
         {
             var cloneGO = UnityEngine.Object.Instantiate(sourceCanvas.gameObject);
             cloneGO.name = $"[CDP] {sourceCanvas.name} {key}";
-            cloneGO.hideFlags = HideFlags.DontSave;
+            cloneGO.hideFlags = HideFlags.HideAndDontSave;
             cloneGO.SetActive(true);
 
             var cloneCanvas = cloneGO.GetComponent<Canvas>();
