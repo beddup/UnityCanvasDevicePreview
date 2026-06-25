@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEditor;
 using UnityEditor.PackageManager;
 
 namespace CanvasDevicePreview.Editor
@@ -27,7 +28,7 @@ namespace CanvasDevicePreview.Editor
             _allDevices.Clear();
             _groupedByBrand.Clear();
 
-            var packageInfo = PackageInfo.FindForPackageName("com.unity.device-simulator.devices");
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForPackageName("com.unity.device-simulator.devices");
             if (packageInfo != null)
             {
                 _packagePath = packageInfo.resolvedPath;
@@ -36,9 +37,20 @@ namespace CanvasDevicePreview.Editor
                     LoadDevicesFrom(devicesDir, devicesDir);
             }
 
-            string localPath = Path.Combine(Application.dataPath, "CanvasDevicePreview/Editor/Devices");
-            if (Directory.Exists(localPath))
-                LoadDevicesFrom(localPath, localPath);
+            // Find local .device files under Assets/ via DeviceInfoAsset importer
+            var localGuids = AssetDatabase.FindAssets("t:DeviceInfoAsset");
+            var seenDirs = new HashSet<string>();
+            string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            foreach (var guid in localGuids)
+            {
+                string relPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (!relPath.StartsWith("Assets/"))
+                    continue;
+                string absDir = Path.GetFullPath(Path.Combine(projectRoot,
+                    Path.GetDirectoryName(relPath)));
+                if (seenDirs.Add(absDir))
+                    LoadDevicesFrom(absDir, absDir);
+            }
 
             foreach (var list in _groupedByBrand.Values)
                 list.Sort((a, b) => string.Compare(a.FriendlyName, b.FriendlyName, StringComparison.OrdinalIgnoreCase));
