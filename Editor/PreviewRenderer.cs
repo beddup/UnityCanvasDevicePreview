@@ -82,7 +82,8 @@ namespace CanvasDevicePreview.Editor
             
             for (int i = 0; i < _slots.Count; i ++)
             {
-                _slots[i].Camera.transform.position = sourceCamera.transform.position + (i + 1) * 15 * Vector3.right;
+                float offset = sourceCamera.orthographicSize * 2 * sourceCamera.aspect * 2;
+                _slots[i].Camera.transform.position = sourceCamera.transform.position + (i + 1) * offset * Vector3.right;
             }
         }
 
