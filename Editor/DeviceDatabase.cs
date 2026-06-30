@@ -37,6 +37,15 @@ namespace CanvasDevicePreview.Editor
                     LoadDevicesFrom(devicesDir, devicesDir);
             }
 
+            // Also load from com.beddup.unitycanvasdevicepreview package
+            var beddupPackageInfo = UnityEditor.PackageManager.PackageInfo.FindForPackageName("com.beddup.unitycanvasdevicepreview");
+            if (beddupPackageInfo != null)
+            {
+                string beddupDevicesDir = Path.Combine(beddupPackageInfo.resolvedPath, "Editor", "Devices");
+                if (Directory.Exists(beddupDevicesDir))
+                    LoadDevicesFrom(beddupDevicesDir, beddupDevicesDir);
+            }
+
             // Find local .device files under Assets/ via DeviceInfoAsset importer
             var localGuids = AssetDatabase.FindAssets("t:DeviceInfoAsset");
             var seenDirs = new HashSet<string>();
