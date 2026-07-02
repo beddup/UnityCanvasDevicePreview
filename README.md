@@ -46,17 +46,13 @@ The preview is non-destructive: the editor window clones the source Canvas for e
 
 ## Installation
 
-Add this line to your project's `Packages/manifest.json`:
+Install [OpenUPM CLI](https://openupm.com/docs/getting-started.html), then run:
 
-```json
-{
-  "dependencies": {
-    "com.beddup.unitycanvasdevicepreview": "https://github.com/beddup/unitycanvasdevicepreview.git"
-  }
-}
+```bash
+openupm add com.beddup.unitycanvasdevicepreview
 ```
 
-You can also download the source code directly and import it into your Unity project.
+or You can also download the source code directly and import it into your Unity project.
 
 ---
 
