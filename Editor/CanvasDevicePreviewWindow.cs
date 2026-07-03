@@ -10,7 +10,7 @@ namespace CanvasDevicePreview.Editor
 {
     public class CanvasDevicePreviewWindow : EditorWindow
     {
-        private const int COLUMNS = 4;
+        private int _previewColumns = 4;
 
         private readonly DeviceDatabase _deviceDb = new();
         private readonly PreviewRenderer _renderer = new();
@@ -830,6 +830,10 @@ namespace CanvasDevicePreview.Editor
             _previewHeight = EditorGUILayout.Slider(_previewHeight, 300, 2000, GUILayout.Width(60));
 
             GUILayout.Space(20);
+            EditorGUILayout.LabelField("Columns:", GUILayout.Width(55));
+            _previewColumns = EditorGUILayout.IntSlider(_previewColumns, 1, 8, GUILayout.Width(120));
+
+            GUILayout.Space(20);
             var oldShow = _showSelectionHighlight;
             _showSelectionHighlight = EditorGUILayout.ToggleLeft("Show Selection Mask", _showSelectionHighlight, GUILayout.Width(160));
             if (_showSelectionHighlight != oldShow)
@@ -844,19 +848,19 @@ namespace CanvasDevicePreview.Editor
 
         private void DrawPreviewGrid(float availWidth)
         {
-            float colW = (availWidth - (COLUMNS - 1) * 6f) / COLUMNS;
+            float colW = (availWidth - (_previewColumns - 1) * 6f) / _previewColumns;
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             var slots = _renderer.Slots;
 
             for (int i = 0; i < slots.Count; i++)
             {
-                if (i % COLUMNS == 0)
+                if (i % _previewColumns == 0)
                     EditorGUILayout.BeginHorizontal();
 
                 DrawPreview(slots[i], colW);
 
-                if (i % COLUMNS == COLUMNS - 1 || i == slots.Count - 1)
+                if (i % _previewColumns == _previewColumns - 1 || i == slots.Count - 1)
                 {
                     EditorGUILayout.EndHorizontal();
                     GUILayout.Space(8);
@@ -974,6 +978,7 @@ namespace CanvasDevicePreview.Editor
         {
             public List<string> activePresets = new();
             public List<CustomResEntry> customResolutions = new();
+            public int previewColumns = 4;
         }
 
         [Serializable]
@@ -995,7 +1000,7 @@ namespace CanvasDevicePreview.Editor
 
         private void SaveState()
         {
-            var state = new SavedState();
+            var state = new SavedState { previewColumns = _previewColumns };
             foreach (var p in _activePresets)
                 state.activePresets.Add(p);
             foreach (var kv in _resolutionLookup)
@@ -1020,13 +1025,17 @@ namespace CanvasDevicePreview.Editor
             try
             {
                 var state = JsonUtility.FromJson<SavedState>(json);
-                if (state?.activePresets != null)
+                if (state == null) return;
+
+                _previewColumns = Mathf.Clamp(state.previewColumns, 1, 8);
+
+                if (state.activePresets != null)
                 {
                     foreach (var preset in state.activePresets)
                         _activePresets.Add(preset);
                 }
 
-                if (state?.customResolutions != null)
+                if (state.customResolutions != null)
                 {
                     foreach (var cr in state.customResolutions)
                     {

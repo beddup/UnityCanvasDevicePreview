@@ -1,4 +1,8 @@
 # Changelog
+## [0.1.0] - 2026-07-03
+### Added
+- Configurable preview column count with slider control (1-8 columns)
+
 ## [0.0.4] - 2026-07-03
 ### Changed
 - Refined window layout: top-bottom split with 4-column upper control area
