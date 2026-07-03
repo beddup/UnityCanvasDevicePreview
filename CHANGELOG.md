@@ -1,4 +1,11 @@
 # Changelog
+## [0.0.4] - 2026-07-03
+### Changed
+- Refined window layout: top-bottom split with 4-column upper control area
+- Moved layout, image/text, and button tools into separate columns
+- Removed Active Devices list (manage via dropdown and preview slot close)
+- Simplified toolbar: removed Auto Refresh controls, moved Refresh button to the right
+
 ## [0.0.3] - 2026-07-02
 - Registered on OpenUPM
 
