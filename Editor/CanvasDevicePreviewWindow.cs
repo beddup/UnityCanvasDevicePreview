@@ -10,7 +10,7 @@ namespace CanvasDevicePreview.Editor
 {
     public class CanvasDevicePreviewWindow : EditorWindow
     {
-        private const int COLUMNS = 3;
+        private const int COLUMNS = 4;
 
         private readonly DeviceDatabase _deviceDb = new();
         private readonly PreviewRenderer _renderer = new();
@@ -22,7 +22,7 @@ namespace CanvasDevicePreview.Editor
         private int _refreshIntervalFrames = 12;
         private int _frameCounter;
         private Vector2 _scrollPos;
-        private Vector2 _leftScrollPos;
+        private Vector2 _col1Scroll, _col2Scroll, _col3Scroll, _col4Scroll;
         private bool _needsRefresh;
         private float _previewHeight = 600f;
         private bool _showSelectionHighlight = true;
@@ -276,57 +276,139 @@ namespace CanvasDevicePreview.Editor
         {
             EditorGUILayout.Space(6);
 
-            float leftWidth = Mathf.Max(280f, Mathf.Min(350f, position.width * 0.32f));
+            float colSpacing = 6f;
+            float colWidth = (position.width - colSpacing * 3 - 16) / 4f;
+            float topAreaHeight = 190f;
 
+            // ── Top: 4-column control area ──
             EditorGUILayout.BeginHorizontal();
             {
-                // ── Left: Operations ──
-                EditorGUILayout.BeginVertical(GUILayout.Width(leftWidth));
-                {
-                    _leftScrollPos = EditorGUILayout.BeginScrollView(_leftScrollPos);
-                    DrawSourceCanvasField();
-
-                    if (_sourceCanvas != null)
-                    {
-                        EditorGUILayout.Space(4);
-                        DrawDeviceDbWarning();
-                        DrawDeviceSelector();
-                        EditorGUILayout.Space(6);
-                        DrawAdjustmentColumn();
-                    }
-                    else
-                    {
-                        EditorGUILayout.HelpBox("Select a Canvas in the scene to preview at multiple resolutions.", MessageType.Info);
-                    }
-                    EditorGUILayout.EndScrollView();
-                }
-                EditorGUILayout.EndVertical();
-
-                GUILayout.Space(8);
-
-                // ── Right: Preview ──
-                EditorGUILayout.BeginVertical();
-                {
-                    DrawControls();
-                    EditorGUILayout.Space(4);
-
-                    if (_sourceCanvas == null)
-                    {
-                        // nothing to show
-                    }
-                    else if (_renderer.Slots.Count == 0 && _activePresets.Count > 0 && !_needsRefresh)
-                    {
-                        EditorGUILayout.HelpBox("Click 'Refresh' to generate previews.", MessageType.Info);
-                    }
-                    else if (_renderer.Slots.Count > 0)
-                    {
-                        float rightWidth = position.width - leftWidth - 30f;
-                        DrawPreviewGrid(rightWidth);
-                    }
-                }
-                EditorGUILayout.EndVertical();
+                DrawColumn1(colWidth, topAreaHeight);
+                GUILayout.Space(colSpacing);
+                DrawColumn2(colWidth, topAreaHeight);
+                GUILayout.Space(colSpacing);
+                DrawColumn3(colWidth, topAreaHeight);
+                GUILayout.Space(colSpacing);
+                DrawColumn4(colWidth, topAreaHeight);
             }
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(6);
+
+            // ── Bottom: Preview area ──
+            DrawControls();
+            EditorGUILayout.Space(4);
+
+            if (_sourceCanvas == null)
+            {
+                // nothing to show
+            }
+            else if (_renderer.Slots.Count == 0 && _activePresets.Count > 0 && !_needsRefresh)
+            {
+                EditorGUILayout.HelpBox("Click 'Refresh' to generate previews.", MessageType.Info);
+            }
+            else if (_renderer.Slots.Count > 0)
+            {
+                DrawPreviewGrid(position.width - 16);
+            }
+        }
+
+        // ── Column 1: Source Canvas + Target Resolutions ───────
+
+        private void DrawColumn1(float width, float height)
+        {
+            EditorGUILayout.BeginVertical("box", GUILayout.Width(width));
+            _col1Scroll = EditorGUILayout.BeginScrollView(_col1Scroll, GUILayout.Height(height));
+            DrawSourceCanvasField();
+
+            if (_sourceCanvas != null)
+            {
+                EditorGUILayout.Space(4);
+                DrawDeviceDbWarning();
+                DrawDeviceSelector();
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Select a Canvas in the scene to preview at multiple resolutions.", MessageType.Info);
+            }
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        // ── Column 2: Layout tools ─────────────────────────────
+
+        private void DrawColumn2(float width, float height)
+        {
+            EditorGUILayout.BeginVertical("box", GUILayout.Width(width));
+            _col2Scroll = EditorGUILayout.BeginScrollView(_col2Scroll, GUILayout.Height(height));
+
+            string label;
+            if (_selectedRectTransforms.Count == 0)
+                label = "未选择任何RectTransform";
+            else if (_selectedRectTransforms.Count == 1)
+                label = $"已选择 {_selectedGameObjects[0].name}";
+            else
+                label = $"已选择 {_selectedRectTransforms.Count} 个 RectTransform";
+
+            EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+
+            if (_selectedRectTransforms.Count == 0)
+            {
+                EditorGUILayout.HelpBox("Select a GameObject in the Canvas to adjust layout, image, or button properties.", MessageType.Info);
+            }
+            else
+            {
+                DrawLayoutSection();
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        // ── Column 3: Image / Text tools ───────────────────────
+
+        private void DrawColumn3(float width, float height)
+        {
+            EditorGUILayout.BeginVertical("box", GUILayout.Width(width));
+            _col3Scroll = EditorGUILayout.BeginScrollView(_col3Scroll, GUILayout.Height(height));
+
+            if (_selectedImage != null)
+            {
+                DrawImageSection();
+            }
+            else if (_selectedTextGameObject != null)
+            {
+                DrawTextSection();
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Image / Text", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox("选中物体没有 Image 或 Text 组件", MessageType.Info);
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        // ── Column 4: Button tools ─────────────────────────────
+
+        private void DrawColumn4(float width, float height)
+        {
+            EditorGUILayout.BeginVertical("box", GUILayout.Width(width));
+            _col4Scroll = EditorGUILayout.BeginScrollView(_col4Scroll, GUILayout.Height(height));
+
+            if (_selectedButton != null)
+            {
+                DrawButtonSection();
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Button", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox("选中物体没有 Button 组件", MessageType.Info);
+            }
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawSourceCanvasField()
@@ -354,41 +436,6 @@ namespace CanvasDevicePreview.Editor
                     + "for device presets. Custom resolutions are available below.",
                     MessageType.Warning);
             }
-        }
-
-        // ── Adjustment Column ────────────────────────────────────
-
-        private void DrawAdjustmentColumn()
-        {
-            EditorGUILayout.BeginVertical("box");
-            {
-                string label;
-                if (_selectedRectTransforms.Count == 0)
-                    label = "未选择任何RectTransform";
-                else if (_selectedRectTransforms.Count == 1)
-                    label = $"已选择 {_selectedGameObjects[0].name}";
-                else
-                    label = $"已选择 {_selectedRectTransforms.Count} 个 RectTransform";
-
-                EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
-
-                if (_selectedRectTransforms.Count == 0)
-                {
-                    EditorGUILayout.HelpBox("Select a GameObject in the Canvas to adjust layout, image, or button properties.", MessageType.Info);
-                    EditorGUILayout.EndVertical();
-                    return;
-                }
-
-                DrawLayoutSection();
-                GUILayout.Space(8);
-                // Image / Button / Text tools are single-selection only
-                if (_selectedImage != null) DrawImageSection();
-                GUILayout.Space(8);
-                if (_selectedButton != null) DrawButtonSection();
-                GUILayout.Space(8);
-                if (_selectedTextGameObject != null) DrawTextSection();
-            }
-            EditorGUILayout.EndVertical();
         }
 
         // ── Adjustment: Layout ───────────────────────────────────
@@ -737,27 +784,6 @@ namespace CanvasDevicePreview.Editor
                 }
 
                 EditorGUILayout.EndHorizontal();
-
-                if (_activePresets.Count > 0)
-                {
-                    EditorGUILayout.Space(4);
-                    EditorGUILayout.LabelField("Active Devices", EditorStyles.miniBoldLabel);
-                    foreach (var key in _activePresets)
-                    {
-                        Vector2Int res = _resolutionLookup.TryGetValue(key, out var r) ? r : Vector2Int.zero;
-                        int notch = _customNotchHeights.TryGetValue(key, out var nh) ? nh : 0;
-                        string notchStr = notch > 0 ? $"  notch:{notch}" : "";
-
-                        EditorGUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField($"{key}  {res.x}x{res.y}{notchStr}", EditorStyles.miniLabel);
-                        if (GUILayout.Button("x", EditorStyles.miniButton, GUILayout.Width(18), GUILayout.Height(14)))
-                        {
-                            _activePresets.Remove(key);
-                            ApplyStateChange();
-                        }
-                        EditorGUILayout.EndHorizontal();
-                    }
-                }
             }
             EditorGUILayout.EndVertical();
         }
@@ -800,23 +826,17 @@ namespace CanvasDevicePreview.Editor
         private void DrawControls()
         {
             EditorGUILayout.BeginHorizontal();
-            _autoRefresh = EditorGUILayout.ToggleLeft("Auto Refresh", _autoRefresh, GUILayout.Width(100));
-            float secs = _refreshIntervalFrames / 60f;
-            secs = EditorGUILayout.Slider(secs, 0.2f, 5f, GUILayout.Width(60));
-            _refreshIntervalFrames = Mathf.Max(1, Mathf.RoundToInt(secs * 60f));
-            EditorGUILayout.LabelField($"{secs:F1}s", GUILayout.Width(30));
-            if (GUILayout.Button("Refresh", GUILayout.Width(80))) { RefreshPreviews(); _needsRefresh = false; }
-            GUILayout.Space(20);
-
             EditorGUILayout.LabelField("Preview Height:", GUILayout.Width(100));
             _previewHeight = EditorGUILayout.Slider(_previewHeight, 300, 2000, GUILayout.Width(60));
 
             GUILayout.Space(20);
             var oldShow = _showSelectionHighlight;
-            _showSelectionHighlight = EditorGUILayout.ToggleLeft("Show Selection", _showSelectionHighlight, GUILayout.Width(110));
+            _showSelectionHighlight = EditorGUILayout.ToggleLeft("Show Selection Mask", _showSelectionHighlight, GUILayout.Width(160));
             if (_showSelectionHighlight != oldShow)
                 _needsRefresh = true;
 
+            GUILayout.Space(12);
+            if (GUILayout.Button("Refresh", GUILayout.Width(80))) { RefreshPreviews(); _needsRefresh = false; }
             EditorGUILayout.EndHorizontal();
         }
 
