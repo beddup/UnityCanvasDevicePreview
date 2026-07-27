@@ -20,7 +20,6 @@ namespace CanvasDevicePreview.Editor
 
         private readonly List<DeviceDef> _allDevices = new();
         private readonly Dictionary<string, List<DeviceDef>> _groupedByBrand = new();
-        private string _packagePath;
 
         public void Load()
         {
@@ -30,24 +29,35 @@ namespace CanvasDevicePreview.Editor
             _groupedByBrand.Clear();
 
             var allPackages = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
-
-
-            var packageInfo = allPackages.First(item => item.name == "com.unity.device-simulator.devices");
-            if (packageInfo != null)
+            
+            var packageInfo = allPackages.FirstOrDefault(item => item.name == "com.unity.device-simulator.devices");
+            if (!string.IsNullOrEmpty(packageInfo?.resolvedPath))
             {
-                _packagePath = packageInfo.resolvedPath;
-                string devicesDir = Path.Combine(_packagePath, "Editor", "Devices");
+                string devicesDir = Path.Combine(packageInfo.resolvedPath, "Editor", "Devices");
                 if (Directory.Exists(devicesDir))
                     LoadDevicesFrom(devicesDir, devicesDir);
             }
 
             // Also load from com.beddup.unitycanvasdevicepreview package
-            var beddupPackageInfo = allPackages.First(item => item.name == "com.beddup.unitycanvasdevicepreview");
-            if (beddupPackageInfo != null)
+            var beddupPackageInfo = allPackages.FirstOrDefault(item => item.name == "com.beddup.unitycanvasdevicepreview");
+            string beddupDevicesDir = null;
+            if (!string.IsNullOrEmpty(beddupPackageInfo?.resolvedPath))
             {
-                string beddupDevicesDir = Path.Combine(beddupPackageInfo.resolvedPath, "Editor", "Devices");
-                if (Directory.Exists(beddupDevicesDir))
-                    LoadDevicesFrom(beddupDevicesDir, beddupDevicesDir);
+                beddupDevicesDir = Path.Combine(beddupPackageInfo.resolvedPath, "Editor", "Devices");
+            }
+            else
+            {
+                var guids = AssetDatabase.FindAssets("CanvasDevicePreview.Editor");
+                if (guids != null && guids.Length > 0)
+                {
+                    var assemblyDefinePath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    beddupDevicesDir = Path.Combine(Path.GetDirectoryName(assemblyDefinePath), "Devices");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(beddupDevicesDir) && Directory.Exists(beddupDevicesDir))
+            {
+                LoadDevicesFrom(beddupDevicesDir, beddupDevicesDir);
             }
 
             // Find local .device files under Assets/ via DeviceInfoAsset importer
