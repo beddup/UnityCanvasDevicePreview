@@ -1,4 +1,8 @@
 # Changelog
+## [0.1.0] - 2026-07-027
+### Fix
+- Fix compile error on 2021.3
+
 ## [0.1.0] - 2026-07-03
 ### Added
 - Configurable preview column count with slider control (1-8 columns)

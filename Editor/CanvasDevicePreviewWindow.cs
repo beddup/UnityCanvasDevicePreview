@@ -260,10 +260,13 @@ namespace CanvasDevicePreview.Editor
                     stream.GetChangeGameObjectOrComponentPropertiesEvent(index, out var gcp); instanceId = gcp.instanceId; return true;
                 case ObjectChangeKind.DestroyGameObjectHierarchy:
                     stream.GetDestroyGameObjectHierarchyEvent(index, out var dgo); instanceId = dgo.instanceId; return true;
+#if UNITY_6000_0_OR_NEWER
+
                 case ObjectChangeKind.ChangeChildrenOrder:
                     stream.GetChangeChildrenOrderEvent(index, out var cco); instanceId = cco.instanceId; return true;
                 case ObjectChangeKind.ChangeRootOrder:
                     stream.GetChangeRootOrderEvent(index, out var cro); instanceId = cro.instanceId; return true;
+#endif
                 default:
                     instanceId = 0;
                     return false;

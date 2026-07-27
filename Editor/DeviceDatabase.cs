@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -28,7 +29,10 @@ namespace CanvasDevicePreview.Editor
             _allDevices.Clear();
             _groupedByBrand.Clear();
 
-            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForPackageName("com.unity.device-simulator.devices");
+            var allPackages = UnityEditor.PackageManager.PackageInfo.GetAllRegisteredPackages();
+
+
+            var packageInfo = allPackages.First(item => item.name == "com.unity.device-simulator.devices");
             if (packageInfo != null)
             {
                 _packagePath = packageInfo.resolvedPath;
@@ -38,7 +42,7 @@ namespace CanvasDevicePreview.Editor
             }
 
             // Also load from com.beddup.unitycanvasdevicepreview package
-            var beddupPackageInfo = UnityEditor.PackageManager.PackageInfo.FindForPackageName("com.beddup.unitycanvasdevicepreview");
+            var beddupPackageInfo = allPackages.First(item => item.name == "com.beddup.unitycanvasdevicepreview");
             if (beddupPackageInfo != null)
             {
                 string beddupDevicesDir = Path.Combine(beddupPackageInfo.resolvedPath, "Editor", "Devices");
