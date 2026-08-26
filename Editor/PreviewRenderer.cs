@@ -10,7 +10,7 @@ namespace CanvasDevicePreview.Editor
     /// Creates and manages preview slots (RT + Camera + Canvas clone + optional device overlay)
     /// for a given source Canvas at specified resolutions.
     /// </summary>
-    public class PreviewRenderer
+    public partial class PreviewRenderer
     {
         public IReadOnlyList<PreviewSlot> Slots => _slots;
         private readonly List<PreviewSlot> _slots = new();
@@ -45,7 +45,7 @@ namespace CanvasDevicePreview.Editor
             foreach (var slot in _slots)
             {
                 if (slot.CloneRoot != null)
-                    UnityEngine.Object.DestroyImmediate(slot.CloneRoot);
+                    DestroyObj(slot.CloneRoot);
 
                 ConfigurePreviewCamera(slot.Camera, sourceCamera, slot.Resolution);
                 slot.Camera.targetTexture = slot.RenderTexture;
@@ -217,9 +217,9 @@ namespace CanvasDevicePreview.Editor
             var clone = BuildClone(sourceCanvas, key, res, cam);
             if (clone == null)
             {
-                UnityEngine.Object.DestroyImmediate(camGO);
+                DestroyObj(camGO);
                 rt.Release();
-                UnityEngine.Object.DestroyImmediate(rt);
+                DestroyObj(rt);
                 return null;
             }
 
@@ -299,6 +299,9 @@ namespace CanvasDevicePreview.Editor
 
         private static GameObject BuildClone(Canvas sourceCanvas, string key, Vector2Int res, Camera cam)
         {
+            if (Application.isPlaying)
+                return BuildVisualClone(sourceCanvas, key, res, cam);
+
             var cloneGO = UnityEngine.Object.Instantiate(sourceCanvas.gameObject);
             cloneGO.name = $"[CDP] {sourceCanvas.name} {key}";
             cloneGO.hideFlags = HideFlags.HideAndDontSave;
@@ -307,7 +310,7 @@ namespace CanvasDevicePreview.Editor
             var cloneCanvas = cloneGO.GetComponent<Canvas>();
             if (cloneCanvas == null)
             {
-                UnityEngine.Object.DestroyImmediate(cloneGO);
+                DestroyObj(cloneGO);
                 return null;
             }
 
@@ -331,14 +334,14 @@ namespace CanvasDevicePreview.Editor
             if (slot.RenderTexture != null)
             {
                 slot.RenderTexture.Release();
-                UnityEngine.Object.DestroyImmediate(slot.RenderTexture);
+                DestroyObj(slot.RenderTexture);
             }
             if (slot.Camera != null)
-                UnityEngine.Object.DestroyImmediate(slot.Camera.gameObject);
+                DestroyObj(slot.Camera.gameObject);
             if (slot.CloneRoot != null)
-                UnityEngine.Object.DestroyImmediate(slot.CloneRoot);
+                DestroyObj(slot.CloneRoot);
             if (slot.OverlayTexture != null)
-                UnityEngine.Object.DestroyImmediate(slot.OverlayTexture);
+                DestroyObj(slot.OverlayTexture);
         }
     }
 
