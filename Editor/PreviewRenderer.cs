@@ -15,7 +15,20 @@ namespace CanvasDevicePreview.Editor
         public IReadOnlyList<PreviewSlot> Slots => _slots;
         private readonly List<PreviewSlot> _slots = new();
 
+        // 勾选后预览克隆对象在 Hierarchy 可见（hideFlags=None），否则隐藏（HideAndDontSave）
+        public bool ShowInHierarchy { get; set; }
+        private HideFlags hideFlags => ShowInHierarchy ? HideFlags.None : HideFlags.HideAndDontSave;
+
+        private void DestroyObj(UnityEngine.Object obj)
+        {
+            if (obj == null) return;
+            // 预览克隆/相机/RT 都是编辑器临时对象（HideAndDontSave），与 gameplay 无关。
+            // 一律立即销毁：Play Mode 下 Object.Destroy 会延迟到帧末，刷新频繁时旧克隆残留可见。
+            UnityEngine.Object.DestroyImmediate(obj);
+        }
+
         public void Rebuild(Canvas sourceCanvas,
+                            Camera sourceCamera,
                             List<string> activeKeys,
                             Dictionary<string, Vector2Int> resolutionLookup,
                             DeviceDatabase deviceDb,
@@ -23,7 +36,6 @@ namespace CanvasDevicePreview.Editor
                             List<RectTransform> selectedRTs = null)
         {
             if (sourceCanvas == null || !sourceCanvas) return;
-            var sourceCamera = sourceCanvas.worldCamera;
             if (sourceCamera == null)
             {
                 Debug.LogError($"[PreviewRenderer] Source Canvas '{sourceCanvas.name}' has no worldCamera. Cannot create preview slots.");
@@ -87,7 +99,7 @@ namespace CanvasDevicePreview.Editor
             }
         }
 
-        private static float GetContentScale(GameObject cloneRoot, Vector2Int res)
+        private float GetContentScale(GameObject cloneRoot, Vector2Int res)
         {
             var scaler = cloneRoot?.GetComponent<CanvasScaler>();
             if (scaler == null || scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
@@ -110,7 +122,7 @@ namespace CanvasDevicePreview.Editor
             }
         }
 
-        private static int GetDeviceTopNotch(string key, DeviceDatabase deviceDb, Dictionary<string, int> customNotchHeights)
+        private int GetDeviceTopNotch(string key, DeviceDatabase deviceDb, Dictionary<string, int> customNotchHeights)
         {
             if (deviceDb != null && deviceDb.TryGetDevice(key, out var device))
                 return device.NotchHeight;
@@ -123,7 +135,7 @@ namespace CanvasDevicePreview.Editor
         /// Create semi-transparent pink rectangles on a single preview slotʼs clone
         /// to show the position of the currently selected RectTransforms.
         /// </summary>
-        private static void AddHighlights(Canvas sourceCanvas, PreviewSlot slot, List<RectTransform> selectedRTs)
+        private void AddHighlights(Canvas sourceCanvas, PreviewSlot slot, List<RectTransform> selectedRTs)
         {
             if (selectedRTs == null || selectedRTs.Count == 0) return;
             if (slot.CloneRoot == null) return;
@@ -139,9 +151,9 @@ namespace CanvasDevicePreview.Editor
                 var cloneRt = FindCorrespondingRectTransform(canvasRt, cloneCanvasRt, selectedRt);
                 if (cloneRt == null) continue;
 
-                var highlightGO = new GameObject("[CDP] Highlight")
+                var highlightGO = new GameObject("[CDP] Highlight") 
                 {
-                    hideFlags = HideFlags.HideAndDontSave
+                    hideFlags = hideFlags
                 };
                 highlightGO.transform.SetParent(cloneRt, false);
                 highlightGO.transform.SetAsLastSibling();
@@ -162,7 +174,7 @@ namespace CanvasDevicePreview.Editor
         /// Find the RectTransform in the clone hierarchy that corresponds to the given
         /// RectTransform in the source hierarchy, using sibling-index paths.
         /// </summary>
-        private static RectTransform FindCorrespondingRectTransform(
+        private RectTransform FindCorrespondingRectTransform(
             RectTransform sourceRoot, RectTransform cloneRoot, RectTransform target)
         {
             // Build path of sibling indices from sourceRoot to target
@@ -202,59 +214,76 @@ namespace CanvasDevicePreview.Editor
                 return null;
             }
 
-            var camGO = new GameObject($"[CDP] Cam {key}") { hideFlags = HideFlags.HideAndDontSave };
+            var camGO = new GameObject($"[CDP] Cam {key}") { hideFlags = hideFlags };
             var cam = camGO.AddComponent<Camera>();
             ConfigurePreviewCamera(cam, sourceCamera, res);
 
             var rt = new RenderTexture(res.x, res.y, 24, RenderTextureFormat.ARGB32)
             {
-                hideFlags = HideFlags.HideAndDontSave,
+                hideFlags = hideFlags,
                 name = $"[CDP] RT {key}"
             };
             rt.Create();
             cam.targetTexture = rt;
 
-            var clone = BuildClone(sourceCanvas, key, res, cam);
-            if (clone == null)
+            GameObject clone = null;
+            PreviewSlot slot = null;
+            try
             {
-                DestroyObj(camGO);
-                rt.Release();
-                DestroyObj(rt);
-                return null;
-            }
-
-            int notchHeight = GetDeviceTopNotch(key, deviceDb, customNotchHeights);
-
-            var slot = new PreviewSlot
-            {
-                Key = key,
-                Label = key,
-                Resolution = res,
-                DeviceNotchHeight = notchHeight,
-                Camera = cam,
-                RenderTexture = rt,
-                CloneRoot = clone,
-            };
-
-            // Load device overlay if available
-            if (deviceDb != null && deviceDb.TryGetDevice(key, out var device) && device.OverlayPath != null)
-            {
-                var overlayTex = deviceDb.LoadOverlayTexture(device.OverlayPath, device.OverlayBasePath);
-                if (overlayTex != null)
+                clone = BuildClone(sourceCanvas, key, res, cam);
+                if (clone == null)
                 {
-                    slot.OverlayTexture = overlayTex;
-                    slot.BorderSize = device.BorderSize;
+                    DestroyObj(camGO);
+                    rt.Release();
+                    DestroyObj(rt);
+                    return null;
                 }
+
+                int notchHeight = GetDeviceTopNotch(key, deviceDb, customNotchHeights);
+
+                slot = new PreviewSlot
+                {
+                    Key = key,
+                    Label = key,
+                    Resolution = res,
+                    DeviceNotchHeight = notchHeight,
+                    Camera = cam,
+                    RenderTexture = rt,
+                    CloneRoot = clone,
+                };
+
+                // Load device overlay if available
+                if (deviceDb != null && deviceDb.TryGetDevice(key, out var device) && device.OverlayPath != null)
+                {
+                    var overlayTex = deviceDb.LoadOverlayTexture(device.OverlayPath, device.OverlayBasePath);
+                    if (overlayTex != null)
+                    {
+                        slot.OverlayTexture = overlayTex;
+                        slot.BorderSize = device.BorderSize;
+                    }
+                }
+
+                slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
+                BroadcastSlotInfo(slot);
+
+                cam.Render();
+                return slot;
             }
-
-            slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
-            BroadcastSlotInfo(slot);
-
-            cam.Render();
-            return slot;
+            catch
+            {
+                // 创建中途失败时清理已创建的临时对象，避免 clone/cam/RT 残留
+                if (slot != null) DestroySlot(slot);
+                else
+                {
+                    if (clone != null) DestroyObj(clone);
+                    if (camGO != null) DestroyObj(camGO);
+                    if (rt != null) { rt.Release(); DestroyObj(rt); }
+                }
+                throw;
+            }
         }
 
-        private static void ConfigurePreviewCamera(Camera previewCamera, Camera sourceCamera, Vector2Int res)
+        private void ConfigurePreviewCamera(Camera previewCamera, Camera sourceCamera, Vector2Int res)
         {
             previewCamera.CopyFrom(sourceCamera);
             previewCamera.enabled = false;
@@ -262,7 +291,7 @@ namespace CanvasDevicePreview.Editor
             previewCamera.aspect = (float)res.x / res.y;
         }
 
-        private static float ComputePreviewCanvasNotch(PreviewSlot slot)
+        private float ComputePreviewCanvasNotch(PreviewSlot slot)
         {
             if (slot.DeviceNotchHeight <= 0) return 0f;
             var canvas = slot.CloneRoot.GetComponent<Canvas>();
@@ -274,7 +303,7 @@ namespace CanvasDevicePreview.Editor
         /// 构建 PreviewSlotInfo 并广播给 clone 上所有实现 IPreviewSlotHandler 的组件，
         /// 由各业务脚本根据设备和 Canvas 信息自行调整布局。
         /// </summary>
-        private static void BroadcastSlotInfo(PreviewSlot slot)
+        private void BroadcastSlotInfo(PreviewSlot slot)
         {
             var cloneRoot = slot.CloneRoot;
             if (cloneRoot == null) return;
@@ -297,14 +326,11 @@ namespace CanvasDevicePreview.Editor
             }
         }
 
-        private static GameObject BuildClone(Canvas sourceCanvas, string key, Vector2Int res, Camera cam)
+        private GameObject BuildClone(Canvas sourceCanvas, string key, Vector2Int res, Camera cam)
         {
-            if (Application.isPlaying)
-                return BuildVisualClone(sourceCanvas, key, res, cam);
-
             var cloneGO = UnityEngine.Object.Instantiate(sourceCanvas.gameObject);
             cloneGO.name = $"[CDP] {sourceCanvas.name} {key}";
-            cloneGO.hideFlags = HideFlags.HideAndDontSave;
+            cloneGO.hideFlags = hideFlags;
             cloneGO.SetActive(true);
 
             var cloneCanvas = cloneGO.GetComponent<Canvas>();
@@ -329,7 +355,7 @@ namespace CanvasDevicePreview.Editor
             return cloneGO;
         }
 
-        private static void DestroySlot(PreviewSlot slot)
+        private void DestroySlot(PreviewSlot slot)
         {
             if (slot.RenderTexture != null)
             {

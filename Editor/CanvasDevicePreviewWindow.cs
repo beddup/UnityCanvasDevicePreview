@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using CanvasDevicePreview;
 
 namespace CanvasDevicePreview.Editor
 {
@@ -31,6 +32,7 @@ namespace CanvasDevicePreview.Editor
         private bool _needsRefresh;
         private float _previewHeight = 600f;
         private bool _showSelectionHighlight = true;
+        private bool _showInHierarchy;
 
         private int _customW = 1080;
         private int _customH = 1920;
@@ -115,7 +117,32 @@ namespace CanvasDevicePreview.Editor
         private void RefreshPreviews()
         {
             var rtList = _showSelectionHighlight ? _selectedRectTransforms : null;
-            _renderer.Rebuild(_sourceCanvas, _activePresets, _resolutionLookup, _deviceDb, _customNotchHeights, rtList);
+            _renderer.ShowInHierarchy = _showInHierarchy;
+
+            Canvas source = _sourceCanvas;
+            Camera sourceCamera = _sourceCanvas != null ? _sourceCanvas.worldCamera : null;
+
+            try
+            {
+                // Play Mode：把渲染源换成删过业务脚本的可编辑副本（实现见 CanvasDevicePreviewWindow.PlayMode.cs）
+                var strippedCanvas = AcquirePlayModeSource(_sourceCanvas);
+                if (strippedCanvas != null)
+                    source = strippedCanvas;
+
+                _renderer.Rebuild(source, sourceCamera, _activePresets, _resolutionLookup, _deviceDb, _customNotchHeights, rtList);
+            }
+            catch (Exception e)
+            {
+                // 构建/重建失败（如 prefab 预览源 SaveAsPrefabAsset 出错）时会中断 Rebuild，
+                // 旧克隆没机会被清理而残留；这里兜底清掉所有预览克隆。
+                Debug.LogError($"[CanvasDevicePreview] RefreshPreviews 失败：{e.Message}");
+                _renderer.DestroyAll();
+            }
+            finally
+            {
+                ReleasePlayModeSource();
+            }
+
             EditorUtility.SetDirty(this);
         }
 
@@ -879,6 +906,11 @@ namespace CanvasDevicePreview.Editor
             var oldShow = _showSelectionHighlight;
             _showSelectionHighlight = EditorGUILayout.ToggleLeft("Show Selection Mask", _showSelectionHighlight, GUILayout.Width(160));
             if (_showSelectionHighlight != oldShow)
+                _needsRefresh = true;
+
+            var oldHierarchy = _showInHierarchy;
+            _showInHierarchy = EditorGUILayout.ToggleLeft("Show In Hierarchy", _showInHierarchy, GUILayout.Width(150));
+            if (_showInHierarchy != oldHierarchy)
                 _needsRefresh = true;
 
             GUILayout.Space(12);
