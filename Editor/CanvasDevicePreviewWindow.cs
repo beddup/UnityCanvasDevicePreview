@@ -8,7 +8,7 @@ using UnityEditor;
 
 namespace CanvasDevicePreview.Editor
 {
-    public class CanvasDevicePreviewWindow : EditorWindow
+    public partial class CanvasDevicePreviewWindow : EditorWindow
     {
         private int _previewColumns = 4;
 
@@ -17,6 +17,11 @@ namespace CanvasDevicePreview.Editor
         private Dictionary<string, Vector2Int> _resolutionLookup = new();
 
         private Canvas _sourceCanvas;
+        private Canvas _sceneCanvas;              // 场景里显式/自动找到的 Canvas
+        private GameObject _prefabAsset;          // 当前预览的 prefab 资产（null = 未预览 prefab）
+        private GameObject _previewHost;          // prefab 预览宿主根（HideAndDontSave）
+        private Canvas _previewHostCanvas;        // 宿主上的 Canvas（有效源）
+        private Camera _previewHostCamera;
         private readonly List<string> _activePresets = new();
         private bool _autoRefresh = true;
         private int _refreshIntervalFrames = 12;
@@ -75,6 +80,7 @@ namespace CanvasDevicePreview.Editor
             ObjectChangeEvents.changesPublished -= OnChangesPublished;
             Selection.selectionChanged -= OnSelectionChanged;
             _renderer.DestroyAll();
+            DestroyPreviewHost();
         }
 
         private void Tick()
@@ -115,6 +121,24 @@ namespace CanvasDevicePreview.Editor
 
         private void OnSelectionChanged()
         {
+            // Prefab 自动跟随只在 Edit Mode 生效，Play Mode 下走原有高亮逻辑
+            if (!Application.isPlaying)
+            {
+                var go = Selection.activeObject as GameObject;
+
+                // 自动跟随：Project 里选中 prefab 资产时，直接预览该 prefab
+                if (IsPrefabAsset(go))
+                {
+                    if (go != _prefabAsset)
+                        SetPrefabSource(go);
+                    return;
+                }
+
+                // 选中了非 prefab（场景对象/其它资产）：退出 prefab 预览
+                if (_prefabAsset != null)
+                    ClearPrefabSource();
+            }
+
             RefreshSelection();
             RefreshPreviews();
             Repaint();
@@ -417,16 +441,30 @@ namespace CanvasDevicePreview.Editor
         private void DrawSourceCanvasField()
         {
             EditorGUILayout.LabelField("Source Canvas", EditorStyles.boldLabel);
-            var newCanvas = (Canvas)EditorGUILayout.ObjectField(_sourceCanvas, typeof(Canvas), true);
+            var newCanvas = (Canvas)EditorGUILayout.ObjectField(_sceneCanvas, typeof(Canvas), true);
             if (newCanvas == null)
             {
                 newCanvas = GameObject.FindAnyObjectByType<Canvas>();
             }
-            if (newCanvas != _sourceCanvas)
+            if (newCanvas != _sceneCanvas)
             {
-                _sourceCanvas = newCanvas;
-                _renderer.DestroyAll();
-                _needsRefresh = true;
+                _sceneCanvas = newCanvas;
+                if (_prefabAsset == null)
+                {
+                    _sourceCanvas = newCanvas;
+                    _renderer.DestroyAll();
+                    _needsRefresh = true;
+                }
+            }
+
+            if (_sceneCanvas != null && _sceneCanvas.GetComponent<CanvasScaler>() == null)
+            {
+                EditorGUILayout.HelpBox("场景 Canvas 缺少 CanvasScaler，预览缩放可能不正确。建议为场景 Canvas 添加 CanvasScaler。", MessageType.Warning);
+            }
+
+            if (_prefabAsset != null)
+            {
+                EditorGUILayout.HelpBox($"正在预览 Prefab：{_prefabAsset.name}（点选其它对象回到场景 Canvas）", MessageType.Info);
             }
         }
 
