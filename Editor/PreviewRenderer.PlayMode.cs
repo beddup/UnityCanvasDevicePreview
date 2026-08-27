@@ -167,7 +167,7 @@ namespace CanvasDevicePreview.Editor
                 d.color = tmp.color;
                 d.alignment = tmp.alignment;
                 d.fontStyle = tmp.fontStyle;
-                d.enableWordWrapping = tmp.enableWordWrapping;
+                d.textWrappingMode = tmp.textWrappingMode;
                 d.raycastTarget = false;
             }
 
