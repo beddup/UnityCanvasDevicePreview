@@ -1,4 +1,8 @@
 # Changelog
+## [0.2.1] - 2026-08-27
+### Fixed
+- Prevent preview clone from being persisted into the scene when `ShowInHierarchy` is enabled (`HideFlags.DontSave` instead of `HideFlags.None`)
+
 ## [0.2.0] - 2026-08-27
 ### Added
 - Prefab source mode: preview a prefab as the source instead of a scene Canvas

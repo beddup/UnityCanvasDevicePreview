@@ -16,7 +16,7 @@ namespace CanvasDevicePreview.Editor
 
         // 勾选后预览克隆对象在 Hierarchy 可见（hideFlags=None），否则隐藏（HideAndDontSave）
         public bool ShowInHierarchy { get; set; }
-        private HideFlags hideFlags => ShowInHierarchy ? HideFlags.None : HideFlags.HideAndDontSave;
+        private HideFlags hideFlags => ShowInHierarchy ? HideFlags.DontSave : HideFlags.HideAndDontSave;
 
         private void DestroyObj(UnityEngine.Object obj)
         {
