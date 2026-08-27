@@ -1,4 +1,18 @@
 # Changelog
+## [0.2.0] - 2026-08-27
+### Added
+- Prefab source mode: preview a prefab as the source instead of a scene Canvas
+- Play mode support with manual refresh under play mode
+
+### Changed
+- Refined copy component and notch height messaging
+
+### Fixed
+- Fix obsolete API usage
+
+### Removed
+- Removed `IPreviewSlotHandler` interface and `PreviewSlotInfo` struct; replaced with `SimulateDeviceNotch(int)` callback
+
 ## [0.1.2] - 2026-07-27
 ### Changed
 - Add devices from Assets
