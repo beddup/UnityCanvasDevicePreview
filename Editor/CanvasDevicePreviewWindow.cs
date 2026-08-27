@@ -85,6 +85,8 @@ namespace CanvasDevicePreview.Editor
 
         private void Tick()
         {
+            if (Application.isPlaying) return; // Play Mode 只手动刷新
+
             if (_sourceCanvas == null || !_sourceCanvas)
             {
                 _renderer.DestroyAll();
@@ -121,23 +123,21 @@ namespace CanvasDevicePreview.Editor
 
         private void OnSelectionChanged()
         {
-            // Prefab 自动跟随只在 Edit Mode 生效，Play Mode 下走原有高亮逻辑
-            if (!Application.isPlaying)
+            if (Application.isPlaying) return; // Play Mode 只手动刷新
+
+            var go = Selection.activeObject as GameObject;
+
+            // 自动跟随：Project 里选中 prefab 资产时，直接预览该 prefab
+            if (IsPrefabAsset(go))
             {
-                var go = Selection.activeObject as GameObject;
-
-                // 自动跟随：Project 里选中 prefab 资产时，直接预览该 prefab
-                if (IsPrefabAsset(go))
-                {
-                    if (go != _prefabAsset)
-                        SetPrefabSource(go);
-                    return;
-                }
-
-                // 选中了非 prefab（场景对象/其它资产）：退出 prefab 预览
-                if (_prefabAsset != null)
-                    ClearPrefabSource();
+                if (go != _prefabAsset)
+                    SetPrefabSource(go);
+                return;
             }
+
+            // 选中了非 prefab（场景对象/其它资产）：退出 prefab 预览
+            if (_prefabAsset != null)
+                ClearPrefabSource();
 
             RefreshSelection();
             RefreshPreviews();
@@ -241,6 +241,7 @@ namespace CanvasDevicePreview.Editor
 
         private void OnChangesPublished(ref ObjectChangeEventStream stream)
         {
+            if (Application.isPlaying) return; // Play Mode 只手动刷新
             if (_sourceCanvas == null) return;
 
             for (int i = 0; i < stream.length; i++)
