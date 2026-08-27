@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using CanvasDevicePreview;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -64,7 +63,7 @@ namespace CanvasDevicePreview.Editor
                 slot.CloneRoot = BuildClone(sourceCanvas, slot.Key, slot.Resolution, slot.Camera);
                 slot.DeviceNotchHeight = GetDeviceTopNotch(slot.Key, deviceDb, customNotchHeights);
                 slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
-                BroadcastSlotInfo(slot);
+                BroadcastDeviceNotch(slot);
                 AddHighlights(sourceCanvas, slot, selectedRTs);
                 slot.Camera.Render();
             }
@@ -264,7 +263,7 @@ namespace CanvasDevicePreview.Editor
                 }
 
                 slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
-                BroadcastSlotInfo(slot);
+                BroadcastDeviceNotch(slot);
 
                 cam.Render();
                 return slot;
@@ -299,31 +298,15 @@ namespace CanvasDevicePreview.Editor
             return slot.DeviceNotchHeight / canvas.scaleFactor;
         }
 
-        /// <summary>
-        /// 构建 PreviewSlotInfo 并广播给 clone 上所有实现 IPreviewSlotHandler 的组件，
-        /// 由各业务脚本根据设备和 Canvas 信息自行调整布局。
-        /// </summary>
-        private void BroadcastSlotInfo(PreviewSlot slot)
+        private void BroadcastDeviceNotch(PreviewSlot slot)
         {
             var cloneRoot = slot.CloneRoot;
             if (cloneRoot == null) return;
 
-            var handlers = cloneRoot.GetComponentsInChildren<IPreviewSlotHandler>();
-            if (handlers.Length == 0) return;
-
-            var previewCanvas = cloneRoot.GetComponent<Canvas>();
-            var info = new PreviewSlotInfo
-            {
-                DeviceLabel = slot.Label,
-                DeviceResolution = slot.Resolution,
-                DeviceNotchHeight = slot.DeviceNotchHeight,
-                PreviewCanvas = previewCanvas,
-            };
-
-            foreach (var handler in handlers)
-            {
-                handler.OnPreviewSlotBuilt(info);
-            }
+            cloneRoot.BroadcastMessage(
+                CanvasDevicePreviewMessages.SimulateDeviceNotch,
+                slot.DeviceNotchHeight,
+                SendMessageOptions.DontRequireReceiver);
         }
 
         private GameObject BuildClone(Canvas sourceCanvas, string key, Vector2Int res, Camera cam)
@@ -383,5 +366,10 @@ namespace CanvasDevicePreview.Editor
         public GameObject CloneRoot;
         public Texture2D OverlayTexture;
         public Vector4 BorderSize;
+    }
+
+    internal static class CanvasDevicePreviewMessages
+    {
+        public const string SimulateDeviceNotch = "SimulateDeviceNotch";
     }
 }

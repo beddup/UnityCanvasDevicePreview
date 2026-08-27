@@ -16,7 +16,7 @@ Unity UI often looks correct at the design resolution but breaks on real devices
 | Device presets | Loads `.device` definitions from Unity Device Simulator packages and local package presets |
 | Device overlays | Draws optional device frame overlays around preview render textures |
 | Notch information | Computes top notch / safe-area height from device safe area data |
-| Preview callbacks | Broadcasts `PreviewSlotInfo` to cloned preview canvases through `IPreviewSlotHandler` |
+| Preview callbacks | Broadcasts notch height to cloned preview canvases through `SimulateDeviceNotch(int)` |
 | Selection highlight | Highlights selected `RectTransform` objects inside every preview slot |
 | Anchor tools | Quickly set selected UI elements to left / center / right / stretch and top / center / bottom / stretch |
 | Image tools | Inspect sprite sizing, set sliced mode, open Sprite Editor, shrink sliced sprites, or add an aspect-ratio filler |
@@ -101,7 +101,7 @@ When a single object is selected, extra tools may appear:
 
 ## Preview callbacks
 
-Runtime scripts can implement `IPreviewSlotHandler` to react when a Canvas clone is built for a specific preview slot.
+Runtime scripts can add a public `SimulateDeviceNotch(int deviceNotchHeight)` method to react when a Canvas clone is built for a specific preview slot.
 
 This is useful for safe-area or notch adapters that need to simulate per-device layout behavior inside editor previews.
 
@@ -111,7 +111,7 @@ For a complete notch-adaptation example, see:
 Assets/CanvasDevicePreview/Runtime/NotchAdapterExample.cs
 ```
 
-`NotchAdapterExample` implements `IPreviewSlotHandler`, reads `PreviewSlotInfo.DeviceNotchHeight`,
+`NotchAdapterExample` implements `SimulateDeviceNotch(int deviceNotchHeight)`,
 converts the device notch height into Canvas units, and adjusts configured `RectTransform` targets.
 It can be used as a reference for UI that needs to move or resize around the top safe area in each
 preview device.

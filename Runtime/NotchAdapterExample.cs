@@ -5,7 +5,7 @@ using System;
 namespace CanvasDevicePreview
 {
     [ExecuteAlways]
-    public class NotchAdapterExample : MonoBehaviour, IPreviewSlotHandler
+    public class NotchAdapterExample : MonoBehaviour
     {
         [Serializable]
         public class AdjustUIItem
@@ -105,12 +105,12 @@ namespace CanvasDevicePreview
             }
         }
 
-        public void OnPreviewSlotBuilt(PreviewSlotInfo slotInfo)
+        public void SimulateDeviceNotch(int deviceNotchHeight)
         {
-            if (slotInfo.DeviceNotchHeight <= 0) return;
-            m_SimulatedTopNotch = slotInfo.DeviceNotchHeight;
+            if (deviceNotchHeight <= 0) return;
+            m_SimulatedTopNotch = deviceNotchHeight;
             AdjustTopNotchTargetsUI();
-            Debug.Log($"Apply Top Notch Offset for Device {slotInfo.DeviceLabel}({slotInfo.DeviceResolution}), base offset {TopCanvasNotch}");
+            Debug.Log($"Apply Top Notch Offset: device notch {deviceNotchHeight}, base offset {TopCanvasNotch}");
         }
         
         #if UNITY_EDITOR

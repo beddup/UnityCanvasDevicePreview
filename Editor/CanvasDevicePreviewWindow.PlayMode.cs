@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
-using CanvasDevicePreview;
 
 namespace CanvasDevicePreview.Editor
 {
@@ -184,18 +183,29 @@ namespace CanvasDevicePreview.Editor
             return cur.gameObject;
         }
 
-        // 删除标准：GraphicRaycaster、自定义 MonoBehaviour（非 uGUI/TMP/Spine、非 IPreviewSlotHandler）
+        // 删除标准：GraphicRaycaster、自定义 MonoBehaviour（非 uGUI/TMP/Spine、非设备预览消息处理器）
         private static bool ShouldRemoveComponent(Component c)
         {
             if (c is GraphicRaycaster) return true;
             if (!(c is MonoBehaviour)) return false;
+            
             string ns = c.GetType().Namespace ?? "";
             bool isKnown = ns == "UnityEngine.UI" || ns.StartsWith("UnityEngine.UI.")
                         || ns == "TMPro"        || ns.StartsWith("TMPro.")
                         || ns == "Spine"        || ns.StartsWith("Spine.");
             if (isKnown) return false;
-            if (c is IPreviewSlotHandler) return false;
+            if (HasDeviceNotchSimulationHandler(c)) return false;
             return true;
+        }
+
+        private static bool HasDeviceNotchSimulationHandler(Component c)
+        {
+            return c.GetType().GetMethod(
+                CanvasDevicePreviewMessages.SimulateDeviceNotch,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public,
+                null,
+                new[] { typeof(int) },
+                null) != null;
         }
     }
 }
