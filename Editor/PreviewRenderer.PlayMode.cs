@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEditorInternal;
 
 namespace CanvasDevicePreview.Editor
 {
@@ -23,7 +24,7 @@ namespace CanvasDevicePreview.Editor
         {
             var cloneGO = new GameObject($"[CDP] {sourceCanvas.name} {key}")
             {
-                hideFlags = HideFlags.HideAndDontSave,
+                // hideFlags = HideFlags.HideAndDontSave,
                 layer = sourceCanvas.gameObject.layer,
             };
 
@@ -52,11 +53,8 @@ namespace CanvasDevicePreview.Editor
             var src = sourceCanvas.GetComponent<CanvasScaler>();
             if (src == null) return;
             var d = dst.AddComponent<CanvasScaler>();
-            d.uiScaleMode = src.uiScaleMode;
-            d.referenceResolution = src.referenceResolution;
-            d.screenMatchMode = src.screenMatchMode;
-            d.matchWidthOrHeight = src.matchWidthOrHeight;
-            d.referencePixelsPerUnit = src.referencePixelsPerUnit;
+            ComponentUtility.CopyComponent(src);
+            ComponentUtility.PasteComponentValues(d);
         }
 
         private static void RecurseVisualCopy(Transform src, Transform dst)
@@ -66,10 +64,11 @@ namespace CanvasDevicePreview.Editor
                 Transform child = src.GetChild(i);
                 var childGO = new GameObject(child.name)
                 {
-                    hideFlags = HideFlags.HideAndDontSave,
+                    // hideFlags = HideFlags.HideAndDontSave,
                     layer = child.gameObject.layer,
                 };
                 childGO.transform.SetParent(dst, false);
+                childGO.SetActive(child.gameObject.activeSelf);
 
                 var childRt = child as RectTransform;
                 if (childRt != null)
@@ -109,146 +108,32 @@ namespace CanvasDevicePreview.Editor
 
         private static void CopyVisualComponents(GameObject src, GameObject dst)
         {
-            // 图形组件
-            var img = src.GetComponent<Image>();
-            if (img != null)
+            // 剪贴板是全局单例：Copy 后必须立即 Paste
+            foreach (var c in src.GetComponents<Component>())
             {
-                var d = dst.AddComponent<Image>();
-                d.sprite = img.sprite;
-                d.color = img.color;
-                d.type = img.type;
-                d.fillCenter = img.fillCenter;
-                d.fillAmount = img.fillAmount;
-                d.fillMethod = img.fillMethod;
-                d.fillOrigin = img.fillOrigin;
-                d.fillClockwise = img.fillClockwise;
-                d.preserveAspect = img.preserveAspect;
-                d.raycastTarget = false;
-            }
-            else
-            {
-                var raw = src.GetComponent<RawImage>();
-                if (raw != null)
-                {
-                    var d = dst.AddComponent<RawImage>();
-                    d.texture = raw.texture;
-                    d.color = raw.color;
-                    d.uvRect = raw.uvRect;
-                    d.material = raw.material;
-                    d.raycastTarget = false;
-                }
+                if (!ShouldCopyComponent(c)) continue;
+                ComponentUtility.CopyComponent(c);
+                ComponentUtility.PasteComponentAsNew(dst);
             }
 
-            // 文本组件
-            var text = src.GetComponent<Text>();
-            if (text != null)
-            {
-                var d = dst.AddComponent<Text>();
-                d.text = text.text;
-                d.font = text.font;
-                d.fontSize = text.fontSize;
-                d.color = text.color;
-                d.alignment = text.alignment;
-                d.fontStyle = text.fontStyle;
-                d.lineSpacing = text.lineSpacing;
-                d.supportRichText = text.supportRichText;
-                d.horizontalOverflow = text.horizontalOverflow;
-                d.verticalOverflow = text.verticalOverflow;
-                d.raycastTarget = false;
-            }
-
-            var tmp = src.GetComponent<TMP_Text>();
-            if (tmp != null)
-            {
-                var d = (TMP_Text)dst.AddComponent(tmp.GetType());
-                d.text = tmp.text;
-                d.font = tmp.font;
-                d.fontSize = tmp.fontSize;
-                d.color = tmp.color;
-                d.alignment = tmp.alignment;
-                d.fontStyle = tmp.fontStyle;
-                d.textWrappingMode = tmp.textWrappingMode;
-                d.raycastTarget = false;
-            }
-
-            // 布局组件
-            var le = src.GetComponent<LayoutElement>();
-            if (le != null)
-            {
-                var d = dst.AddComponent<LayoutElement>();
-                d.minWidth = le.minWidth;
-                d.preferredWidth = le.preferredWidth;
-                d.flexibleWidth = le.flexibleWidth;
-                d.minHeight = le.minHeight;
-                d.preferredHeight = le.preferredHeight;
-                d.flexibleHeight = le.flexibleHeight;
-                d.layoutPriority = le.layoutPriority;
-            }
-
-            var csf = src.GetComponent<ContentSizeFitter>();
-            if (csf != null)
-            {
-                var d = dst.AddComponent<ContentSizeFitter>();
-                d.horizontalFit = csf.horizontalFit;
-                d.verticalFit = csf.verticalFit;
-            }
-
-            var arf = src.GetComponent<AspectRatioFitter>();
-            if (arf != null)
-            {
-                var d = dst.AddComponent<AspectRatioFitter>();
-                d.aspectMode = arf.aspectMode;
-                d.aspectRatio = arf.aspectRatio;
-            }
-
-            var hlg = src.GetComponent<HorizontalLayoutGroup>();
-            if (hlg != null) { var d = dst.AddComponent<HorizontalLayoutGroup>(); CopyLayoutGroupFields(hlg, d); }
-            var vlg = src.GetComponent<VerticalLayoutGroup>();
-            if (vlg != null) { var d = dst.AddComponent<VerticalLayoutGroup>(); CopyLayoutGroupFields(vlg, d); }
-            var glg = src.GetComponent<GridLayoutGroup>();
-            if (glg != null)
-            {
-                var d = dst.AddComponent<GridLayoutGroup>();
-                d.padding = glg.padding;
-                d.childAlignment = glg.childAlignment;
-                d.cellSize = glg.cellSize;
-                d.spacing = glg.spacing;
-                d.startCorner = glg.startCorner;
-                d.startAxis = glg.startAxis;
-                d.constraint = glg.constraint;
-                d.constraintCount = glg.constraintCount;
-            }
-
-            // 遮罩
-            var mask = src.GetComponent<Mask>();
-            if (mask != null) { var d = dst.AddComponent<Mask>(); d.showMaskGraphic = mask.showMaskGraphic; }
-            var rmask = src.GetComponent<RectMask2D>();
-            if (rmask != null) { var d = dst.AddComponent<RectMask2D>(); d.padding = rmask.padding; }
-
-            // CanvasGroup
-            var cg = src.GetComponent<CanvasGroup>();
-            if (cg != null)
-            {
-                var d = dst.AddComponent<CanvasGroup>();
-                d.alpha = cg.alpha;
-                d.interactable = cg.interactable;
-                d.blocksRaycasts = cg.blocksRaycasts;
-                d.ignoreParentGroups = cg.ignoreParentGroups;
-            }
+            // 保持预览不拦截射线（源值可能是 true）
+            foreach (var g in dst.GetComponentsInChildren<Graphic>())
+                g.raycastTarget = false;
         }
 
-        private static void CopyLayoutGroupFields(HorizontalOrVerticalLayoutGroup src, HorizontalOrVerticalLayoutGroup dst)
+        private static bool ShouldCopyComponent(Component c)
         {
-            dst.padding = src.padding;
-            dst.spacing = src.spacing;
-            dst.childAlignment = src.childAlignment;
-            dst.childControlWidth = src.childControlWidth;
-            dst.childControlHeight = src.childControlHeight;
-            dst.childForceExpandWidth = src.childForceExpandWidth;
-            dst.childForceExpandHeight = src.childForceExpandHeight;
-            dst.childScaleWidth = src.childScaleWidth;
-            dst.childScaleHeight = src.childScaleHeight;
-            dst.reverseArrangement = src.reverseArrangement;
+            string ns = c.GetType().Namespace ?? "";
+            bool isUiOrTmp = ns == "UnityEngine.UI" || ns.StartsWith("UnityEngine.UI.")
+                          || ns == "TMPro"        || ns.StartsWith("TMPro.");
+            // Graphic 子类（含自定义与 Spine 的 SkeletonGraphic，任意命名空间）都是视觉组件，需复制；
+            // CanvasGroup 在 UnityEngine 命名空间、非 Graphic，需显式加入。
+            if (!isUiOrTmp && !(c is Graphic) && !(c is CanvasGroup)) return false;
+
+            if (c is CanvasScaler) return false;      // root 已手工复制
+            if (c is GraphicRaycaster) return false;  // 预览无需射线
+            if (c is Selectable) return false;        // 避免复制 onClick 等 UnityEvent 引用
+            return true;
         }
     }
 }
