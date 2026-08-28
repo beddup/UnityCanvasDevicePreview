@@ -62,6 +62,7 @@ namespace CanvasDevicePreview.Editor
                 slot.Camera.targetTexture = slot.RenderTexture;
                 slot.CloneRoot = BuildClone(sourceCanvas, slot.Key, slot.Resolution, slot.Camera);
                 slot.DeviceModel = GetDeviceModel(slot.Key, deviceDb);
+                slot.Platform = GetDevicePlatform(slot.Key, deviceDb);
                 slot.DeviceNotchHeight = GetDeviceTopNotch(slot.Key, deviceDb, customNotchHeights);
                 slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
                 BroadcastDeviceInfo(slot);
@@ -141,6 +142,18 @@ namespace CanvasDevicePreview.Editor
             }
 
             return key;
+        }
+
+        private string GetDevicePlatform(string key, DeviceDatabase deviceDb)
+        {
+            if (deviceDb != null
+                && deviceDb.TryGetDevice(key, out var device)
+                && !string.IsNullOrEmpty(device.Platform))
+            {
+                return device.Platform;
+            }
+
+            return "";
         }
 
         /// <summary>
@@ -259,6 +272,7 @@ namespace CanvasDevicePreview.Editor
                     Label = key,
                     Resolution = res,
                     DeviceModel = GetDeviceModel(key, deviceDb),
+                    Platform = GetDevicePlatform(key, deviceDb),
                     DeviceNotchHeight = notchHeight,
                     Camera = cam,
                     RenderTexture = rt,
@@ -320,6 +334,7 @@ namespace CanvasDevicePreview.Editor
             var deviceInfo = new Dictionary<string, object>
             {
                 { CanvasDevicePreviewInfoKeys.DeviceModel, slot.DeviceModel },
+                { CanvasDevicePreviewInfoKeys.Platform, slot.Platform },
                 { CanvasDevicePreviewInfoKeys.Resolution, slot.Resolution },
                 { CanvasDevicePreviewInfoKeys.DeviceNotchHeight, slot.DeviceNotchHeight },
             };
@@ -381,6 +396,7 @@ namespace CanvasDevicePreview.Editor
         public string Label;
         public Vector2Int Resolution;
         public string DeviceModel;
+        public string Platform;
         public int DeviceNotchHeight;
         public float CanvasNotchHeight;
         public Camera Camera;
@@ -398,6 +414,7 @@ namespace CanvasDevicePreview.Editor
     internal static class CanvasDevicePreviewInfoKeys
     {
         public const string DeviceModel = "device_model";
+        public const string Platform = "platform";
         public const string Resolution = "resolution";
         public const string DeviceNotchHeight = "device_notch_height";
     }

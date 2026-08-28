@@ -112,6 +112,7 @@ namespace CanvasDevicePreview.Editor
                     {
                         FriendlyName = def.friendlyName,
                         DeviceModel = def.systemInfo?.deviceModel,
+                        Platform = GetPlatform(def.systemInfo?.operatingSystem),
                         Brand = brand,
                         Resolution = new Vector2Int(screen.width, screen.height),
                         OverlayPath = overlayPath,
@@ -189,6 +190,14 @@ namespace CanvasDevicePreview.Editor
             return brand;
         }
 
+        private static string GetPlatform(string operatingSystem)
+        {
+            if (string.IsNullOrEmpty(operatingSystem)) return "";
+            if (operatingSystem.IndexOf("iOS", StringComparison.OrdinalIgnoreCase) >= 0) return "ios";
+            if (operatingSystem.IndexOf("Android", StringComparison.OrdinalIgnoreCase) >= 0) return "android";
+            return "";
+        }
+
         // ── JSON types ──
 
         [Serializable]
@@ -226,6 +235,7 @@ namespace CanvasDevicePreview.Editor
         private class SystemInfoJson
         {
             public string deviceModel;
+            public string operatingSystem;
         }
     }
 
@@ -233,6 +243,7 @@ namespace CanvasDevicePreview.Editor
     {
         public string FriendlyName;
         public string DeviceModel;
+        public string Platform;
         public string Brand;
         public Vector2Int Resolution;
         public string OverlayPath;

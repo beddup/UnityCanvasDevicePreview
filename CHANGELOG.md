@@ -1,4 +1,8 @@
 # Changelog
+## [0.3.2] - 2026-08-28
+### Added
+- Add `platform` field to the device info broadcast (`"ios"` / `"android"`), parsed from device preset `systemInfo.operatingSystem`
+
 ## [0.3.1] - 2026-08-28
 ### Fixed
 - Fix compile error: `HasDeviceNotchSimulationHandler` still referenced the renamed `SimulateDeviceNotch` message instead of `SimulateDevice`

@@ -106,6 +106,7 @@ Runtime scripts can add a public `SimulateDevice(Dictionary<string, object> devi
 The `deviceInfo` dictionary contains these keys:
 
 - `device_model` — the device's model name (string)
+- `platform` — the device platform (`"ios"` or `"android"`, string)
 - `resolution` — the preview resolution (Vector2Int)
 - `device_notch_height` — the top notch / safe-area height in pixels (int)
 
