@@ -201,7 +201,7 @@ namespace CanvasDevicePreview.Editor
         private static bool HasDeviceNotchSimulationHandler(Component c)
         {
             return c.GetType().GetMethod(
-                CanvasDevicePreviewMessages.SimulateDeviceNotch,
+                CanvasDevicePreviewMessages.SimulateDevice,
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public,
                 null,
                 new[] { typeof(Dictionary<string, object>) },

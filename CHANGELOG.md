@@ -1,4 +1,8 @@
 # Changelog
+## [0.3.1] - 2026-08-28
+### Fixed
+- Fix compile error: `HasDeviceNotchSimulationHandler` still referenced the renamed `SimulateDeviceNotch` message instead of `SimulateDevice`
+
 ## [0.3.0] - 2026-08-28
 ### Added
 - Broadcast device model, resolution, and notch height to preview clones via `SimulateDevice(Dictionary<string, object>)`
