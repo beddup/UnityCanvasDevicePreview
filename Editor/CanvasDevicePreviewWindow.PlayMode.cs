@@ -204,7 +204,7 @@ namespace CanvasDevicePreview.Editor
                 CanvasDevicePreviewMessages.SimulateDeviceNotch,
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public,
                 null,
-                new[] { typeof(int) },
+                new[] { typeof(Dictionary<string, object>) },
                 null) != null;
         }
     }

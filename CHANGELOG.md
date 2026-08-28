@@ -1,4 +1,12 @@
 # Changelog
+## [0.3.0] - 2026-08-28
+### Added
+- Broadcast device model, resolution, and notch height to preview clones via `SimulateDevice(Dictionary<string, object>)`
+- Parse and expose `deviceModel` from device preset system info
+
+### Changed
+- Renamed runtime callback `SimulateDeviceNotch(int)` to `SimulateDevice(Dictionary<string, object>)`
+
 ## [0.2.1] - 2026-08-27
 ### Fixed
 - Prevent preview clone from being persisted into the scene when `ShowInHierarchy` is enabled (`HideFlags.DontSave` instead of `HideFlags.None`)

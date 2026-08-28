@@ -61,9 +61,10 @@ namespace CanvasDevicePreview.Editor
                 ConfigurePreviewCamera(slot.Camera, sourceCamera, slot.Resolution);
                 slot.Camera.targetTexture = slot.RenderTexture;
                 slot.CloneRoot = BuildClone(sourceCanvas, slot.Key, slot.Resolution, slot.Camera);
+                slot.DeviceModel = GetDeviceModel(slot.Key, deviceDb);
                 slot.DeviceNotchHeight = GetDeviceTopNotch(slot.Key, deviceDb, customNotchHeights);
                 slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
-                BroadcastDeviceNotch(slot);
+                BroadcastDeviceInfo(slot);
                 AddHighlights(sourceCanvas, slot, selectedRTs);
                 slot.Camera.Render();
             }
@@ -128,6 +129,18 @@ namespace CanvasDevicePreview.Editor
             if (customNotchHeights != null && customNotchHeights.TryGetValue(key, out var h))
                 return h;
             return 0;
+        }
+
+        private string GetDeviceModel(string key, DeviceDatabase deviceDb)
+        {
+            if (deviceDb != null
+                && deviceDb.TryGetDevice(key, out var device)
+                && !string.IsNullOrEmpty(device.DeviceModel))
+            {
+                return device.DeviceModel;
+            }
+
+            return key;
         }
 
         /// <summary>
@@ -245,6 +258,7 @@ namespace CanvasDevicePreview.Editor
                     Key = key,
                     Label = key,
                     Resolution = res,
+                    DeviceModel = GetDeviceModel(key, deviceDb),
                     DeviceNotchHeight = notchHeight,
                     Camera = cam,
                     RenderTexture = rt,
@@ -263,7 +277,7 @@ namespace CanvasDevicePreview.Editor
                 }
 
                 slot.CanvasNotchHeight = ComputePreviewCanvasNotch(slot);
-                BroadcastDeviceNotch(slot);
+                BroadcastDeviceInfo(slot);
 
                 cam.Render();
                 return slot;
@@ -298,14 +312,21 @@ namespace CanvasDevicePreview.Editor
             return slot.DeviceNotchHeight / canvas.scaleFactor;
         }
 
-        private void BroadcastDeviceNotch(PreviewSlot slot)
+        private void BroadcastDeviceInfo(PreviewSlot slot)
         {
             var cloneRoot = slot.CloneRoot;
             if (cloneRoot == null) return;
 
+            var deviceInfo = new Dictionary<string, object>
+            {
+                { CanvasDevicePreviewInfoKeys.DeviceModel, slot.DeviceModel },
+                { CanvasDevicePreviewInfoKeys.Resolution, slot.Resolution },
+                { CanvasDevicePreviewInfoKeys.DeviceNotchHeight, slot.DeviceNotchHeight },
+            };
+
             cloneRoot.BroadcastMessage(
-                CanvasDevicePreviewMessages.SimulateDeviceNotch,
-                slot.DeviceNotchHeight,
+                CanvasDevicePreviewMessages.SimulateDevice,
+                deviceInfo,
                 SendMessageOptions.DontRequireReceiver);
         }
 
@@ -359,6 +380,7 @@ namespace CanvasDevicePreview.Editor
         public string Key;
         public string Label;
         public Vector2Int Resolution;
+        public string DeviceModel;
         public int DeviceNotchHeight;
         public float CanvasNotchHeight;
         public Camera Camera;
@@ -370,6 +392,13 @@ namespace CanvasDevicePreview.Editor
 
     internal static class CanvasDevicePreviewMessages
     {
-        public const string SimulateDeviceNotch = "SimulateDeviceNotch";
+        public const string SimulateDevice = "SimulateDevice";
+    }
+
+    internal static class CanvasDevicePreviewInfoKeys
+    {
+        public const string DeviceModel = "device_model";
+        public const string Resolution = "resolution";
+        public const string DeviceNotchHeight = "device_notch_height";
     }
 }

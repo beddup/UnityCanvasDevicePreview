@@ -105,8 +105,12 @@ namespace CanvasDevicePreview
             }
         }
 
-        public void SimulateDeviceNotch(int deviceNotchHeight)
+        public void SimulateDevice(Dictionary<string, object> deviceInfo)
         {
+            if (deviceInfo == null || !deviceInfo.TryGetValue("device_notch_height", out var notchValue))
+                return;
+
+            int deviceNotchHeight = notchValue is int value ? value : 0;
             if (deviceNotchHeight <= 0) return;
             m_SimulatedTopNotch = deviceNotchHeight;
             AdjustTopNotchTargetsUI();

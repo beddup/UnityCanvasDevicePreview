@@ -111,6 +111,7 @@ namespace CanvasDevicePreview.Editor
                     var device = new DeviceDef
                     {
                         FriendlyName = def.friendlyName,
+                        DeviceModel = def.systemInfo?.deviceModel,
                         Brand = brand,
                         Resolution = new Vector2Int(screen.width, screen.height),
                         OverlayPath = overlayPath,
@@ -195,6 +196,7 @@ namespace CanvasDevicePreview.Editor
         {
             public string friendlyName;
             public ScreenJson[] screens;
+            public SystemInfoJson systemInfo;
         }
 
         [Serializable]
@@ -219,11 +221,18 @@ namespace CanvasDevicePreview.Editor
             public string overlayPath;
             public Vector4 borderSize;
         }
+
+        [Serializable]
+        private class SystemInfoJson
+        {
+            public string deviceModel;
+        }
     }
 
     public struct DeviceDef
     {
         public string FriendlyName;
+        public string DeviceModel;
         public string Brand;
         public Vector2Int Resolution;
         public string OverlayPath;
