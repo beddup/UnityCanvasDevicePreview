@@ -1,4 +1,12 @@
 # Changelog
+## [0.3.3] - 2026-08-31
+### Changed
+- Raise Android max texture size to 4096 and use ASTC compression for device overlay textures
+
+### Fixed
+- Fix device overlay rendering: screen is now positioned inside the device frame using border size (`StretchToFill`) instead of being scaled to the overlay bounds
+- Correct `borderSize` values for iPhone 15, iPhone 15 Pro, iPhone 15 Pro Max, and iPhone 16 Pro presets
+
 ## [0.3.2] - 2026-08-28
 ### Added
 - Add `platform` field to the device info broadcast (`"ios"` / `"android"`), parsed from device preset `systemInfo.operatingSystem`
