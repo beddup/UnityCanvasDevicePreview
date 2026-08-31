@@ -948,9 +948,11 @@ namespace CanvasDevicePreview.Editor
         {
             float displayW = maxWidth - 8f;
             float displayH = _previewHeight;
+            float contentDrawW = 0f;
+            float contentDrawH = 0f;
             float screenDrawW = 0f;
             float screenDrawH = 0f;
-            float overlayScale = 0f;
+            bool drawWithOverlay = false;
 
             if (p.RenderTexture != null)
             {
@@ -964,22 +966,25 @@ namespace CanvasDevicePreview.Editor
 
                     if (osw > 0 && osh > 0)
                     {
-                        overlayScale = Mathf.Min(displayW / p.OverlayTexture.width, displayH / p.OverlayTexture.height);
+                        drawWithOverlay = true;
+                        float overlayScale = Mathf.Min(displayW / p.OverlayTexture.width, displayH / p.OverlayTexture.height);
+                        contentDrawW = p.OverlayTexture.width * overlayScale;
+                        contentDrawH = p.OverlayTexture.height * overlayScale;
                         screenDrawW = osw * overlayScale;
                         screenDrawH = osh * overlayScale;
                     }
                     else
                     {
                         float scale = Mathf.Min(displayW / rtW, displayH / rtH);
-                        screenDrawW = rtW * scale;
-                        screenDrawH = rtH * scale;
+                        contentDrawW = screenDrawW = rtW * scale;
+                        contentDrawH = screenDrawH = rtH * scale;
                     }
                 }
                 else
                 {
                     float scale = Mathf.Min(displayW / rtW, displayH / rtH);
-                    screenDrawW = rtW * scale;
-                    screenDrawH = rtH * scale;
+                    contentDrawW = screenDrawW = rtW * scale;
+                    contentDrawH = screenDrawH = rtH * scale;
                 }
             }
 
@@ -1006,30 +1011,35 @@ namespace CanvasDevicePreview.Editor
             GUILayout.Space(-5);
             EditorGUILayout.LabelField($"Device Notch: {p.DeviceNotchHeight} (Canvas Notch : {p.CanvasNotchHeight})", EditorStyles.miniLabel);
 
-            if (p.RenderTexture != null && screenDrawW > 0)
+            if (p.RenderTexture != null && contentDrawW > 0)
             {
                 GUILayout.FlexibleSpace();
-                Rect r = GUILayoutUtility.GetRect(screenDrawW, screenDrawH, GUILayout.ExpandWidth(false));
-                r.x += (maxWidth - screenDrawW) * 0.5f;
+                Rect contentRect = GUILayoutUtility.GetRect(contentDrawW, contentDrawH, GUILayout.ExpandWidth(false));
+                contentRect.x += (maxWidth - contentDrawW) * 0.5f;
 
-                GUI.DrawTexture(r, p.RenderTexture, ScaleMode.ScaleToFit);
+                Rect screenRect = contentRect;
+                if (drawWithOverlay)
+                {
+                    float scale = contentDrawW / p.OverlayTexture.width;
+                    screenRect = new Rect(
+                        contentRect.x + p.BorderSize.x * scale,
+                        contentRect.y + p.BorderSize.y * scale,
+                        screenDrawW,
+                        screenDrawH);
+                }
+
+                GUI.DrawTexture(screenRect, p.RenderTexture, ScaleMode.StretchToFill);
 
                 if (p.DeviceNotchHeight > 0 && p.OverlayTexture == null)
                 {
                     float notchH = p.DeviceNotchHeight * (screenDrawH / p.Resolution.y);
-                    var notchRect = new Rect(r.x, r.y, r.width, notchH);
+                    var notchRect = new Rect(screenRect.x, screenRect.y, screenRect.width, notchH);
                     EditorGUI.DrawRect(notchRect, new Color(0f, 0.0f, 0.0f, 0.7f));
                 }
 
-                if (p.OverlayTexture != null && overlayScale > 0)
+                if (drawWithOverlay)
                 {
-                    float overlayX = r.x - p.BorderSize.x * overlayScale;
-                    float overlayY = r.y - p.BorderSize.y * overlayScale;
-                    float overlayW = p.OverlayTexture.width * overlayScale;
-                    float overlayH = p.OverlayTexture.height * overlayScale;
-
-                    GUI.DrawTexture(new Rect(overlayX, overlayY, overlayW, overlayH),
-                        p.OverlayTexture, ScaleMode.ScaleToFit);
+                    GUI.DrawTexture(contentRect, p.OverlayTexture, ScaleMode.ScaleToFit);
                 }
 
                 GUILayout.FlexibleSpace();

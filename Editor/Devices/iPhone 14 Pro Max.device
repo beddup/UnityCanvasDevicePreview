@@ -53,7 +53,7 @@
                 "overlayPath": "DeviceOverlays/iPhone 14 Pro Max_Overlay.png",
                 "borderSize": {
                     "x": 80.0,
-                    "y": 72.0,
+                    "y": 70.0,
                     "z": 80.0,
                     "w": 70.0
                 }

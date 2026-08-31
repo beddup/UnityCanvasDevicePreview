@@ -69,10 +69,10 @@
             "presentation": {
                 "overlayPath": "DeviceOverlays/Apple iPhone 16 Pro_Overlay.png",
                 "borderSize": {
-                    "x": 79.0,
-                    "y": 79.0,
-                    "z": 79.0,
-                    "w": 79.0
+                    "x": 78,
+                    "y": 78,
+                    "z": 78,
+                    "w": 78
                 },
                 "cornerRadius": 0.0
             }

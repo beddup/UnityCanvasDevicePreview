@@ -52,10 +52,10 @@
             "presentation": {
                 "overlayPath": "DeviceOverlays/iPhone 15 Plus_Overlay.png",
                 "borderSize": {
-                    "x": 80.0,
-                    "y": 70.0,
-                    "z": 80.0,
-                    "w": 70.0
+                    "x": 111.0,
+                    "y": 95.0,
+                    "z": 110.0,
+                    "w": 95.0
                 }
             }
         }

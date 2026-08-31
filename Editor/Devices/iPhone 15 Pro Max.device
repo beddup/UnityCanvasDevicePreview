@@ -52,10 +52,10 @@
             "presentation": {
                 "overlayPath": "DeviceOverlays/iPhone 15 Pro Max_Overlay.png",
                 "borderSize": {
-                    "x": 80.0,
-                    "y": 72.0,
-                    "z": 80.0,
-                    "w": 70.0
+                    "x": 99.0,
+                    "y": 86.0,
+                    "z": 99.0,
+                    "w": 87.0
                 }
             }
         }
